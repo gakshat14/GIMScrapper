@@ -8,21 +8,23 @@ const request  = require('request');
 const cheerio  = require('cheerio');
 const tinify   = require('tinify');
 const Jimp     = require('jimp');
+const dotenv   = require('dotenv');
 const Query = require('../models/query.server.model');
-let docCount = 0;
-tinify.key = "o3bESEnHWx-aRMirmKpwQMrm391oG8mO";
+
+dotenv.load();
+
+tinify.key = process.env.TINIFY_KEY;
+
 let fileName = [];
 
+//Module for searching google and receiving
+//create a response to send to the user
 exports.searchGoogle = (req, ress) => {
     try {
 
         let requestString = req.params.queryString.toLowerCase();
 
-        Query.count({}, (err, count) => {
-            console.log(count);
-            docCount = count;
-        });
-
+        //executing query to get the deails from database for query
         Query.find({query: requestString}, function (err, res) {
 
             if(err){
@@ -38,25 +40,33 @@ exports.searchGoogle = (req, ress) => {
                     console.log(err);
                 });
 
+                //calling function to return images from disk
                 saveImage(requestString, (data) => {
+
                     console.log(data);
                     ress.contentType('application/json');
                     ress.send(JSON.parse(data));
+
                 });
 
             } else {
-                console.log("Already Server");
+                console.log("Already Served");
+
                 returnSavedFiles(requestString, (data) => {
+
                     fileName = [];
                     console.log(data);
                     ress.contentType('application/json');
                     ress.send(JSON.parse(data));
+
                 })
             }
         })
     } catch (error) {
+
         ress.writeHead(500, {'Content-Type':'text/plain'});
         ress.end("Error Occured");
+
     }
 }
 
@@ -86,24 +96,34 @@ const saveImage = (query, callback) => {
                 if(error) throw error;
 
                 if(!error){
+
                     let j = 0;
+
                     urls.map((url) => {
+
                         var source = tinify.fromUrl(url);
                         source.toFile(path.join(__dirname,'..','www','Photos', query,"optimized_"+ ++j +".jpg"));
+
                     });
                 }
             });
         }
+
         callback(JSON.stringify(urls));
+
     })
 };
 
 exports.getAllQueries = (req, res) => {
+
     Query.find(( err, response) => {
+
         console.log(response);
         res.contentType('application/json');
         res.send(response);
+
     })
+    
 };
 
 const returnSavedFiles = (req, callback) =>{
@@ -121,7 +141,7 @@ const returnSavedFiles = (req, callback) =>{
     })
 };     
 
-//part for B and W
+//part for B and W coloring to make it possible in next release
 
 // var rp = require("request-promise");
 // var cheerio = require("cheerio");

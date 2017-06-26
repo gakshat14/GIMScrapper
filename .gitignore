@@ -56,3 +56,5 @@ typings/
 .env
 
 .vscode/
+
+www/Photos/*
